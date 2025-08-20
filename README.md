@@ -28,7 +28,7 @@
 
 #### B. Using script
 
-- This is support script for "Windows: 2. DLL direct download"
+- [`scripts/download_and_copy_onnxruntime.ps1`](scripts/download_and_copy_onnxruntime.ps1) is support script for "Windows: 2. DLL direct download"
 - In this case, please remove `packages.config` like [`ofxFaceTracker3/example-facetracker3/packages.config`](https://github.com/hanasaan/ofxFaceTracker3/blob/master/example-facetracker3/packages.config)
 
 ```powershell
