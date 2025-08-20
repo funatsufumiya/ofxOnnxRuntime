@@ -6,6 +6,7 @@ param(
     [string]$Type = "gpu",
     [switch]$NoAria2c,
     [string]$BinPath = "$PSScriptRoot\..\..\..\bin",
+    [switch]$NoCopyBin,
     [Alias("h", "help")]
     [switch]$MyHelp,
     [switch]$CopyFromLibs
@@ -52,18 +53,20 @@ if ($MyHelp) {
     exit 0
 }
 
-# Resolve and check bin path
-$resolvedBinPath = Resolve-Path -Path $BinPath -ErrorAction SilentlyContinue
-if (!$resolvedBinPath) {
-    Write-Error "bin directory not found: $BinPath. Please specify app bin path using -BinPath"
-    exit 1
-}
-$binPath = $resolvedBinPath.Path
+if (!$NoCopyBin) {
+    # Resolve and check bin path
+    $resolvedBinPath = Resolve-Path -Path $BinPath -ErrorAction SilentlyContinue
+    if (!$resolvedBinPath) {
+        Write-Error "bin directory not found: $BinPath. Please specify app bin path using -BinPath, or set -NoCopyBin"
+        exit 1
+    }
+    $binPath = $resolvedBinPath.Path
 
-$binPath = [System.IO.Path]::GetFullPath($binPath)
-if ($binPath -eq "C:\" -or $binPath -eq "C:/") {
-    Write-Error "Refusing to copy to root directory: $binPath. Please specify app bin path using -BinPath"
-    exit 1
+    $binPath = [System.IO.Path]::GetFullPath($binPath)
+    if ($binPath -eq "C:\" -or $binPath -eq "C:/") {
+        Write-Error "Refusing to copy to root directory: $binPath. Please specify app bin path using -BinPath, or set -NoCopyBin"
+        exit 1
+    }
 }
 
 if ($Type -eq "gpu") {
@@ -74,21 +77,24 @@ if ($Type -eq "gpu") {
 
 # CopyFromLibs mode: copy DLLs from libs\onnxruntime\lib\vs\x64\ to BinPath
 if ($CopyFromLibs) {
-    
-    $addonRoot = Split-Path -Parent $PSScriptRoot
-    $libRoot = Join-Path $addonRoot "libs\onnxruntime\lib"
-    $libX64 = Join-Path $libRoot "vs\x64"
+    if (!$NoCopyBin) {
+        $addonRoot = Split-Path -Parent $PSScriptRoot
+        $libRoot = Join-Path $addonRoot "libs\onnxruntime\lib"
+        $libX64 = Join-Path $libRoot "vs\x64"
 
-    # Copy all DLLs from vs\x64 to bin
-    $dlls = Get-ChildItem -Path $libX64\$onnxDirName\lib -Filter *.dll -ErrorAction SilentlyContinue
-    if ($dlls.Count -eq 0) {
-        Write-Warning "No DLLs found in $libX64\$onnxDirName\lib. Please download them first without using -CopyFromLibs"
+        # Copy all DLLs from vs\x64 to bin
+        $dlls = Get-ChildItem -Path $libX64\$onnxDirName\lib -Filter *.dll -ErrorAction SilentlyContinue
+        if ($dlls.Count -eq 0) {
+            Write-Warning "No DLLs found in $libX64\$onnxDirName\lib. Please download them first without using -CopyFromLibs"
+        } else {
+            Write-Host "Copying DLLs from $libX64\$onnxDirName\lib to $binPath ..."
+            Copy-Item "$libX64\$onnxDirName\lib\*.dll" -Destination $binPath -Force
+            Write-Host "Done."
+        }
+        exit 0
     } else {
-        Write-Host "Copying DLLs from $libX64\$onnxDirName\lib to $binPath ..."
-        Copy-Item "$libX64\$onnxDirName\lib\*.dll" -Destination $binPath -Force
-        Write-Host "Done."
+        Write-Warning "-CopyFromLibs but -NoCopyBin. Nothing done."
     }
-    exit 0
 }
 
 # Create a secure temporary working directory and file
@@ -174,12 +180,16 @@ try {
         Write-Host "Created directory: $libX64"
     }
 
-    Write-Host "Copying DLLs from $dllSource to $binPath ..."
-    Copy-Item "$dllSource\*.dll" -Destination $binPath -Force
-
     $onnxDirFull = $onnxDir.FullName
     Write-Host "Copying $onnxDirFull into $libX64 ..."
     Copy-Item "$onnxDirFull" -Destination $libX64 -Force -Recurse
+
+    if (!$NoCopyBin) {
+        Write-Host "Copying DLLs from $dllSource to $binPath ..."
+        Copy-Item "$dllSource\*.dll" -Destination $binPath -Force
+    } else {
+        Write-Warning "-NoCopyBin: Skipping Copying DLLs from $dllSource"
+    }
 
     Write-Host "Done."
 }
