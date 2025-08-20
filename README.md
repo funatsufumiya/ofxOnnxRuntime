@@ -42,9 +42,11 @@ PS> powershell -ExecutionPolicy Bypass -File scripts\download_and_copy_onnxrunti
 ## Tested environment
 - oF 0.11.2 + MacBookPro 2018 Intel + macOS Catalina
 - oF 0.11.2 + VS2017 + Windows 10 + RTX2080Ti + CUDA 11.4
+- oF 0.12.0 + MacBook M1 Mac + macOS Sequoia 15.6
+- oF 0.12.0 + VS2022 + Windows 11 (+ CPU)
 
 ## ToDo
-- check M1 Mac (should work), Linux CPU&GPU
+- check Linux CPU&GPU
 
 ## Reference Implementation
 - I heavily referred [Lite.AI.ToolKit](https://github.com/DefTruth/lite.ai.toolkit) implementation.
